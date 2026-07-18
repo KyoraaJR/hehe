@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SCRN — Memecoin Screener</title>
+<meta name="theme-color" content="#12130f">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght=500;600;700&family=JetBrains+Mono:wght=400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand-row">
+      <div class="brand">
+        <img src="icon.svg" alt="SCRN logo" class="brand-icon">
+        <span class="mark">SCRN</span><span class="tag">strict memecoin screener</span>
+      </div>
+      <button id="themeToggle" class="icon-btn" title="Ganti tema">◐</button>
+    </div>
+    <p>Screening otomatis token Solana pakai kriteria strict: liquidity, holder concentration, mint/freeze authority, dan umur token. Data dari DexScreener + RugCheck.</p>
+  </header>
+
+  <nav class="tabbar">
+    <button class="tab active" data-tab="scan">SCAN</button>
+    <button class="tab" data-tab="watchlist">WATCHLIST <span id="wlCount" class="tab-badge" style="display:none;"></span></button>
+    <button class="tab" data-tab="history">HISTORY</button>
+    <button class="tab" data-tab="settings">SETTINGS</button>
+  </nav>
+
+  <!-- SCAN -->
+  <section id="view-scan" class="view active">
+    <div class="panel">
+      <div class="extract-label">Paste teks call (dari Telegram/Twitter/dll)</div>
+      <textarea id="rawCall" placeholder="Watch your entry on $FUB CA>> C96UpzE5tDZEYPQFyeF8JpiXg531cw7ZVeKi7cJqpump #solana #memecoin ..."></textarea>
+      <div class="row" style="margin-top:8px;">
+        <button id="pasteBtn" class="btn-ghost" style="flex:1;">PASTE</button>
+        <button id="extractBtn" class="btn-outline-amber" style="flex:1;">EXTRACT CA</button>
+      </div>
+      <div class="status" id="extractStatus"></div>
+      <div class="chip-row" id="chipRow"></div>
+      <button id="scanAllBtn" class="btn-block" style="display:none;">SCAN SEMUA CA YANG DITEMUKAN</button>
+      <div class="recent-pastes" id="recentPastes"></div>
+    </div>
+
+    <div class="panel">
+      <div class="row">
+        <input id="addr" type="text" placeholder="Token contract address..." autocomplete="off" autocapitalize="off" spellcheck="false">
+        <button id="copyBtn" class="btn-ghost" style="padding:0 14px;">COPY</button>
+        <button id="go">SCAN</button>
+      </div>
+      <div class="status" id="status"></div>
+    </div>
+
+    <div id="results"></div>
+
+    <details class="criteria">
+      <summary>Kriteria aktif <span id="activePresetLabel"></span></summary>
+      <div class="body" id="criteriaBody"></div>
+    </details>
+  </section>
+
+  <!-- WATCHLIST -->
+  <section id="view-watchlist" class="view">
+    <div class="panel" style="margin-top:20px;">
+      <div class="settings-row" style="padding:0;">
+        <div>
+          <div class="label">Auto re-scan watchlist</div>
+          <div class="desc" id="autoRescanDesc">Nonaktif — atur di tab Settings</div>
+        </div>
+        <button id="rescanAllBtn" class="btn-sm btn-outline-amber">SCAN ULANG SEMUA</button>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:14px;">
+      <div class="row">
+        <select id="wlSortSel" style="flex:1;">
+          <option value="added">Urutkan: Terbaru ditambahkan</option>
+          <option value="scoreDesc">Urutkan: Skor tertinggi</option>
+          <option value="scoreAsc">Urutkan: Skor terendah</option>
+          <option value="alertFirst">Urutkan: Alert dulu</option>
+          <option value="pnlDesc">Urutkan: P&amp;L tertinggi</option>
+        </select>
+        <button id="wlExportBtn" class="btn-ghost">EXPORT CSV</button>
+      </div>
+    </div>
+    <div id="wlList"></div>
+    <div id="wlEmpty" class="empty-state">Belum ada token di watchlist.<br>Tambahkan dari hasil scan pakai tombol "+ Watchlist".</div>
+  </section>
+
+  <!-- HISTORY -->
+  <section id="view-history" class="view">
+    <div class="panel" style="margin-top:20px;">
+      <input type="text" id="histSearch" placeholder="Cari symbol atau address...">
+      <div class="chip-row" id="histFilterChips">
+        <button type="button" class="chip selected" data-filter="all">Semua</button>
+        <button type="button" class="chip" data-filter="pass">Pass</button>
+        <button type="button" class="chip" data-filter="warn">Warn</button>
+        <button type="button" class="chip" data-filter="fail">Fail</button>
+      </div>
+    </div>
+    <div class="panel-actions">
+      <button id="histExportBtn" class="btn-sm btn-ghost">EXPORT CSV</button>
+      <button id="clearHistoryBtn" class="btn-sm btn-danger">CLEAR HISTORY</button>
+    </div>
+    <div id="histList"></div>
+    <div id="histEmpty" class="empty-state">Belum ada riwayat scan.</div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="view-settings" class="view">
+    <div class="settings-group">
+      <h3>Tampilan</h3>
+      <div class="settings-row">
+        <div>
+          <div class="label">Tema gelap</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="darkModeSwitch" checked><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <h3>Sinyal koin baru (latar belakang)</h3>
+      <div class="settings-row">
+        <div>
+          <div class="label">Aktifkan sinyal background</div>
+          <div class="desc" id="pushStatus">Nonaktif — jalan di server, nggak perlu tab kebuka</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="pushSwitch"><span class="slider"></span></label>
+      </div>
+      <div class="desc" style="margin-top:2px;">Server ngecek token Solana baru tiap ±5 menit, scoring pakai kriteria aktif kamu (Strict/Loose/Custom), dan kirim push notification kalau ada yang lolos strict screening — walau app ini ditutup total.</div>
+    </div>
+
+    <div class="settings-group">
+      <h3>Alert &amp; monitoring (selagi tab terbuka)</h3>
+      <div class="settings-row">
+        <div>
+          <div class="label">Bunyi saat alert</div>
+          <div class="desc">Beep pas token watchlist ada red flag baru</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="soundSwitch" checked><span class="slider"></span></label>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="label">Notifikasi browser</div>
+          <div class="desc" id="notifStatus">Belum diaktifkan</div>
+        </div>
+        <button id="notifBtn" class="btn-sm btn-outline-amber">AKTIFKAN</button>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="label">Interval auto re-scan watchlist</div>
+          <div class="desc">Hanya jalan selagi tab ini terbuka di browser</div>
+        </div>
+        <select id="rescanInterval">
+          <option value="0">Off</option>
+          <option value="5">5 menit</option>
+          <option value="15">15 menit</option>
+          <option value="30">30 menit</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <h3>Kriteria screening</h3>
+      <div class="preset-btns">
+        <button id="presetStrictBtn" class="btn-sm active">STRICT</button>
+        <button id="presetLooseBtn" class="btn-sm">LOOSE</button>
+        <button id="presetCustomBtn" class="btn-sm">CUSTOM</button>
+      </div>
+      <div class="field-grid" id="criteriaFields"></div>
+      <button id="saveCriteriaBtn" class="btn-block btn-outline-amber">SIMPAN SEBAGAI CUSTOM</button>
+    </div>
+
+    <div class="settings-group">
+      <h3>Data</h3>
+      <div class="settings-row">
+        <div>
+          <div class="label">Hapus semua data</div>
+          <div class="desc">History, watchlist, riwayat paste, dan preset custom</div>
+        </div>
+        <button id="wipeBtn" class="btn-sm btn-danger">HAPUS</button>
+      </div>
+    </div>
+  </section>
+
+  <footer>Alat bantu screening awal, bukan financial advice. Data on-chain publik bisa telat atau tidak lengkap — selalu DYOR sebelum entry. Jangan alokasikan dana lebih dari yang kamu siap kehilangan.</footer>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

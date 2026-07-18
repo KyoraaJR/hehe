@@ -1,0 +1,10 @@
+{
+  "name": "scrn-memecoin-screener",
+  "private": true,
+  "version": "1.0.0",
+  "description": "SCRN — strict memecoin screener (Netlify static site + functions)",
+  "dependencies": {
+    "@netlify/blobs": "^10.7.9",
+    "web-push": "^3.6.7"
+  }
+}

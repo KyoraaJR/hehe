@@ -1,5 +1,16 @@
 const { getStore } = require("@netlify/blobs");
 
+function getBlobStore() {
+  if (process.env.NETLIFY_SITE_ID && process.env.NETLIFY_BLOBS_TOKEN) {
+    return getStore({
+      name: "scrn-store",
+      siteID: process.env.NETLIFY_SITE_ID,
+      token: process.env.NETLIFY_BLOBS_TOKEN,
+    });
+  }
+  return getStore("scrn-store");
+}
+
 exports.handler = async function (event) {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: JSON.stringify({ error: "Method not allowed" }) };
@@ -18,7 +29,7 @@ exports.handler = async function (event) {
   }
 
   try {
-    const store = getStore("scrn-store");
+    const store = getBlobStore();
     const subs = (await store.get("subscriptions", { type: "json" })) || [];
     const filtered = subs.filter((s) => s.endpoint !== endpoint);
     await store.setJSON("subscriptions", filtered);

@@ -1,6 +1,17 @@
 const webpush = require("web-push");
 const { getStore } = require("@netlify/blobs");
 
+function getBlobStore() {
+  if (process.env.NETLIFY_SITE_ID && process.env.NETLIFY_BLOBS_TOKEN) {
+    return getStore({
+      name: "scrn-store",
+      siteID: process.env.NETLIFY_SITE_ID,
+      token: process.env.NETLIFY_BLOBS_TOKEN,
+    });
+  }
+  return getStore("scrn-store");
+}
+
 // Mirrors the STRICT preset in app.js — used only as a fallback if no
 // criteria has been synced from the app yet (see save-criteria.js).
 const DEFAULT_CRITERIA = {
@@ -77,7 +88,7 @@ exports.handler = async function () {
     process.env.VAPID_PRIVATE_KEY
   );
 
-  const store = getStore("scrn-store");
+  const store = getBlobStore();
   let subs = (await store.get("subscriptions", { type: "json" })) || [];
   if (!subs.length) {
     return { statusCode: 200, body: JSON.stringify({ skipped: "belum ada subscriber" }) };
